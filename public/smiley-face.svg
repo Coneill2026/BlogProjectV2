@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" role="img" aria-labelledby="title desc">
+  <title id="title">Smiling face</title>
+  <desc id="desc">A bright yellow smiling face illustration.</desc>
+  <circle cx="120" cy="120" r="104" fill="#ffd166" stroke="#2337ff" stroke-width="8"/>
+  <circle cx="82" cy="98" r="12" fill="#2337ff"/>
+  <circle cx="158" cy="98" r="12" fill="#2337ff"/>
+  <path d="M72 137c12 28 84 28 96 0" fill="none" stroke="#2337ff" stroke-linecap="round" stroke-width="9"/>
+</svg>
