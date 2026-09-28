@@ -26,13 +26,13 @@ const authors = defineCollection({
 				bio: z.string(),
 				avatar: image(),
 				socialLinks: z
-					.array(
-						z.object({
-							label: z.string(),
-							url: z.string().url(),
-						}),
-					)
-					.default([]),
+				  .array(
+ 					   z.object({
+     					 label: z.string(),
+    					  url: z.string().regex(/^https?:\/\/.+/, "Must be a valid URL"),
+    					}),
+ 					 )
+ 					 .default([]),
 			}),
 });
 
