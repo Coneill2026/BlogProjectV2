@@ -4,7 +4,7 @@ import typescript from 'typescript-eslint';
 
 export default [
 	{
-		ignores: ['dist/**', '.astro/**', 'node_modules/**'],
+		ignores: ['dist/**', '.astro/**', 'node_modules/**', 'cdk/cdk.out/**'],
 	},
 	eslint.configs.recommended,
 	...typescript.configs.recommended,
