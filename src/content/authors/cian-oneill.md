@@ -5,6 +5,4 @@ avatar: '../../assets/blog-placeholder-1.jpg'
 socialLinks:
   - label: GitHub
     url: https://github.com/cianoneill
-  - label: LinkedIn
-    url: https://www.linkedin.com/in/cianoneill/
 ---

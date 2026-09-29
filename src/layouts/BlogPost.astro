@@ -24,11 +24,14 @@ const { title, description, pubDate, updatedDate, heroImage, authorProfile } = A
 				margin: 0;
 			}
 			.hero-image {
-				width: 100%;
+				width: min(100%, 1020px);
+				margin-inline: auto;
 			}
 			.hero-image img {
 				display: block;
 				margin: 0 auto;
+				width: 100%;
+				height: auto;
 				border-radius: 12px;
 				box-shadow: var(--box-shadow);
 			}

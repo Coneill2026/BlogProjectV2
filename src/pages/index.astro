@@ -2,6 +2,7 @@
 import BaseHead from '../components/BaseHead.astro';
 import Footer from '../components/Footer.astro';
 import Header from '../components/Header.astro';
+import HomeImage from '../assets/Home_Image.jpg';
 import { SITE_DESCRIPTION, SITE_TITLE } from '../consts';
 ---
 
@@ -15,7 +16,7 @@ import { SITE_DESCRIPTION, SITE_TITLE } from '../consts';
 		<main>
 			<section class="intro">
 				<div>
-					<h1>Welcome to {SITE_TITLE}</h1>
+					<h1>Welcome to Cian's Blog</h1>
 					<p>
 						This is my corner of the internet for sharing the things I am curious about: the music I
 						listen to, the guitars I play, programming projects, and the lessons I pick up along the way.
@@ -23,7 +24,7 @@ import { SITE_DESCRIPTION, SITE_TITLE } from '../consts';
 					</p>
 					<p><a href="/blog">Read the latest posts</a> or <a href="/about">learn more about me</a>.</p>
 				</div>
-				<img src="/smiley-face.svg" alt="A cheerful smiling face" width="240" height="240" />
+				<img src={HomeImage.src} alt="Cian with friends" width={HomeImage.width} height={HomeImage.height} />
 			</section>
 		</main>
 		<Footer />
@@ -41,6 +42,10 @@ import { SITE_DESCRIPTION, SITE_TITLE } from '../consts';
 	}
 	.intro img {
 		flex: 0 0 auto;
+		width: 288px;
+		height: 288px;
+		max-width: 100%;
+		object-fit: cover;
 	}
 	@media (max-width: 600px) {
 		.intro {
