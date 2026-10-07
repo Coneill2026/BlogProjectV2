@@ -1,0 +1,26 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Docker: Build and start app",
+      "type": "process",
+      "command": "docker",
+      "args": ["compose", "up", "--build", "--detach"],
+      "problemMatcher": []
+    },
+    {
+      "label": "Docker: Follow app logs",
+      "type": "process",
+      "command": "docker",
+      "args": ["compose", "logs", "--follow", "web"],
+      "problemMatcher": []
+    },
+    {
+      "label": "Docker: Stop app",
+      "type": "process",
+      "command": "docker",
+      "args": ["compose", "down"],
+      "problemMatcher": []
+    }
+  ]
+}

@@ -1,4 +1,4 @@
-name: Deploy Static Site via AWS CDK
+name: Deploy Astro SSR Application
 on:
   push:
     branches: [main]
@@ -19,15 +19,9 @@ jobs:
             package-lock.json
             cdk/package-lock.json
 
-      - name: Install Astro Dependencies
-        run: npm ci
-
       - name: Install CDK Dependencies
         run: npm ci
         working-directory: cdk
-
-      - name: Build Astro Static Site
-        run: npm run build
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -36,6 +30,6 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-1
 
-      - name: Deploy Infrastructure & Assets with AWS CDK
+      - name: Deploy Infrastructure and Container with AWS CDK
         run: npx cdk deploy --require-approval never
         working-directory: cdk
