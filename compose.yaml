@@ -1,6 +1,0 @@
-services:
-  web:
-    build: .
-    image: proper-parallax:local
-    ports:
-      - "4321:4321"
