@@ -19,9 +19,6 @@ jobs:
             package-lock.json
             cdk/package-lock.json
 
-      - name: Install Dependencies
-        run: npm install
-
       - name: Build Astro Application
         run: npm run build
 
