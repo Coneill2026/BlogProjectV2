@@ -1,21 +1,37 @@
 ---
-import { type CollectionEntry, getCollection, getEntry, render } from 'astro:content';
+import { getEntry, render } from 'astro:content';
+import BaseHead from '../../components/BaseHead.astro';
+import Footer from '../../components/Footer.astro';
+import Header from '../../components/Header.astro';
 import BlogPost from '../../layouts/BlogPost.astro';
+import { SITE_TITLE } from '../../consts';
 
-export async function getStaticPaths() {
-	const posts = await getCollection('blog');
-	return posts.map((post) => ({
-		params: { slug: post.id },
-		props: post,
-	}));
-}
-type Props = CollectionEntry<'blog'>;
-
-const post = Astro.props;
-const authorProfile = post.data.author ? await getEntry('authors', post.data.author) : undefined;
-const { Content } = await render(post);
+const slug = Astro.params.slug;
+const post = slug ? await getEntry('blog', slug) : undefined;
+if (!post) Astro.response.status = 404;
+const authorProfile = post?.data.author ? await getEntry('authors', post.data.author) : undefined;
+const { Content } = post ? await render(post) : { Content: undefined };
 ---
 
-<BlogPost {...post.data} authorProfile={authorProfile?.data}>
-	<Content />
-</BlogPost>
+{
+	post && Content ? (
+		<BlogPost {...post.data} authorProfile={authorProfile?.data}>
+			<Content />
+		</BlogPost>
+	) : (
+		<html lang="en">
+			<head>
+				<BaseHead title={`Post not found | ${SITE_TITLE}`} description="This blog post could not be found." />
+			</head>
+			<body>
+				<Header />
+				<main>
+					<h1>Post not found</h1>
+					<p>That post may have been moved or is no longer available.</p>
+					<a href="/blog">Return to the blog</a>
+				</main>
+				<Footer />
+			</body>
+		</html>
+	)
+}
