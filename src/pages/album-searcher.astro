@@ -1,0 +1,346 @@
+---
+import BaseHead from '../components/BaseHead.astro';
+import Footer from '../components/Footer.astro';
+import Header from '../components/Header.astro';
+import { SITE_TITLE } from '../consts';
+
+type JsonRecord = Record<string, unknown>;
+
+function isRecord(value: unknown): value is JsonRecord {
+	return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function getRecords(value: unknown): JsonRecord[] {
+	if (Array.isArray(value)) {
+		return value.filter(isRecord);
+	}
+
+	if (!isRecord(value)) {
+		return [];
+	}
+
+	for (const key of ['albums', 'results', 'data']) {
+		const nested = value[key];
+		if (Array.isArray(nested)) {
+			return nested.filter(isRecord);
+		}
+		if (isRecord(nested)) {
+			const nestedRecords = getRecords(nested);
+			if (nestedRecords.length > 0) {
+				return nestedRecords;
+			}
+		}
+	}
+
+	for (const key of ['album', 'result']) {
+		if (isRecord(value[key])) {
+			return [value[key]];
+		}
+	}
+
+	return value.title || value.name || value.album ? [value] : [];
+}
+
+function getText(record: JsonRecord, ...keys: string[]): string | undefined {
+	for (const key of keys) {
+		const value = record[key];
+		if (typeof value === 'string' || typeof value === 'number') {
+			const text = String(value).trim();
+			if (text) {
+				return text;
+			}
+		}
+		if (isRecord(value)) {
+			const nestedText = getText(value, 'name', 'title');
+			if (nestedText) {
+				return nestedText;
+			}
+		}
+	}
+	return undefined;
+}
+
+function getArchiveUrl(record: JsonRecord): string | undefined {
+	const value = getText(record, 'link', 'url');
+	if (!value) {
+		return undefined;
+	}
+
+	try {
+		const url = new URL(value);
+		if (
+			url.protocol === 'https:' &&
+			(url.hostname === 'metal-api.dev' ||
+				url.hostname === 'metal-archives.com' ||
+				url.hostname.endsWith('.metal-archives.com'))
+		) {
+			return url.href;
+		}
+	} catch {
+		return undefined;
+	}
+
+	return undefined;
+}
+
+const query = Astro.url.searchParams.get('q')?.trim() ?? '';
+const hasQuery = query.length > 0;
+const tooLong = query.length > 120;
+let albums: JsonRecord[] = [];
+let searchError: string | undefined;
+
+if (hasQuery && !tooLong) {
+	try {
+		const response = await fetch(
+			`https://metal-api.dev/search/albums/title/${encodeURIComponent(query)}`,
+		);
+		if (!response.ok) {
+			throw new Error(`Metal API returned HTTP ${response.status}`);
+		}
+		albums = getRecords(await response.json());
+	} catch (error) {
+		console.error('Metal API album search failed:', error);
+		searchError = 'Album search is temporarily unavailable. Please try again shortly.';
+	}
+}
+---
+
+<!doctype html>
+<html lang="en">
+	<head>
+		<BaseHead
+			title={`Album Searcher | ${SITE_TITLE}`}
+			description="Search for metal albums using data from Metal Archives."
+		/>
+	</head>
+	<body>
+		<Header />
+		<main>
+			<section class="searcher" aria-labelledby="page-title">
+				<p class="eyebrow">Metal Archives</p>
+				<h1 id="page-title">Album Searcher</h1>
+				<p class="intro">
+					Search for a metal album by title and explore the details returned by the Metal API.
+				</p>
+
+				<form action="/album-searcher" method="get" role="search">
+					<label for="album-query">Album title</label>
+					<div class="search-controls">
+						<input
+							id="album-query"
+							name="q"
+							type="search"
+							value={query}
+							placeholder="Try Master of Puppets"
+							maxlength="120"
+							required
+						/>
+						<button type="submit">Search albums</button>
+					</div>
+				</form>
+
+				{tooLong && (
+					<p class="message error" role="alert">Please keep your search to 120 characters or fewer.</p>
+				)}
+				{searchError && <p class="message error" role="alert">{searchError}</p>}
+				{hasQuery && !tooLong && !searchError && albums.length === 0 && (
+					<p class="message" role="status">No matching albums found. Try another title.</p>
+				)}
+
+				{albums.length > 0 && (
+					<section class="results" aria-labelledby="results-title">
+						<h2 id="results-title">Search results</h2>
+						<p class="result-count">
+							{albums.length} {albums.length === 1 ? 'album' : 'albums'} found for “{query}”
+						</p>
+						<ul>
+							{
+								albums.map((album) => {
+									const title = getText(album, 'title', 'albumTitle', 'name', 'album');
+									const artist = getText(album, 'bandName', 'artist', 'band');
+									const releaseDate = getText(
+										album,
+										'releaseDate',
+										'date',
+										'releaseYear',
+										'year',
+									);
+									const type = getText(album, 'type', 'albumType');
+									const genre = getText(album, 'genre', 'style');
+									const label = getText(album, 'label', 'recordLabel');
+									const archiveUrl = getArchiveUrl(album);
+
+									return (
+										<li class="album-card">
+											<h3>{title ?? 'Untitled album'}</h3>
+											{artist && <p class="artist">{artist}</p>}
+											<dl>
+												{releaseDate && <div><dt>Released</dt><dd>{releaseDate}</dd></div>}
+												{type && <div><dt>Release type</dt><dd>{type}</dd></div>}
+												{genre && <div><dt>Genre</dt><dd>{genre}</dd></div>}
+												{label && <div><dt>Label</dt><dd>{label}</dd></div>}
+											</dl>
+											{archiveUrl && (
+												<a href={archiveUrl} target="_blank" rel="noreferrer">
+													View album source
+												</a>
+											)}
+										</li>
+									);
+								})
+							}
+						</ul>
+					</section>
+				)}
+
+				<p class="attribution">
+					Album data is provided by the <a href="https://metal-api.dev/" target="_blank" rel="noreferrer">
+						Metal API
+					</a> and sourced from Metal Archives.
+				</p>
+			</section>
+		</main>
+		<Footer />
+	</body>
+</html>
+
+<style>
+	main {
+		width: min(100% - 2em, 760px);
+		margin: 0 auto;
+		padding: 3em 0;
+	}
+	.searcher {
+		padding: 2em;
+		border: 1px solid rgb(var(--gray-light));
+		border-radius: 12px;
+		background: #303030;
+	}
+	.eyebrow {
+		margin: 0 0 0.25em;
+		color: var(--accent);
+		font-size: 0.8em;
+		font-weight: 700;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+	}
+	h1 {
+		margin-bottom: 0.25em;
+	}
+	.intro {
+		margin-top: 0;
+		color: rgb(var(--gray));
+	}
+	form label {
+		display: block;
+		margin-bottom: 0.4em;
+		font-weight: 700;
+	}
+	.search-controls {
+		display: flex;
+		gap: 0.75em;
+	}
+	input {
+		min-width: 0;
+		flex: 1;
+		padding: 0.7em 0.8em;
+		border: 1px solid rgb(var(--gray));
+		border-radius: 6px;
+		background: #242424;
+		color: rgb(var(--gray-dark));
+		font: inherit;
+	}
+	button {
+		padding: 0.7em 1em;
+		border: 0;
+		border-radius: 6px;
+		background: var(--accent);
+		color: white;
+		font: inherit;
+		font-weight: 700;
+		cursor: pointer;
+	}
+	button:hover {
+		background: var(--accent-dark);
+	}
+	input:focus-visible,
+	button:focus-visible,
+	a:focus-visible {
+		outline: 3px solid rgb(var(--gray));
+		outline-offset: 3px;
+	}
+	.message {
+		margin: 1.5em 0 0;
+	}
+	.error {
+		color: #ff9999;
+	}
+	.results {
+		margin-top: 2.5em;
+	}
+	.results h2 {
+		margin-bottom: 0.1em;
+		font-size: 1.6em;
+	}
+	.result-count {
+		margin-top: 0;
+		color: rgb(var(--gray));
+		font-size: 0.9em;
+	}
+	.results ul {
+		display: grid;
+		gap: 1em;
+		margin: 1.25em 0 0;
+		padding: 0;
+		list-style: none;
+	}
+	.album-card {
+		padding: 1.25em;
+		border: 1px solid rgb(var(--gray-light));
+		border-radius: 8px;
+		background: #242424;
+	}
+	.album-card h3 {
+		margin-bottom: 0;
+		font-size: 1.35em;
+	}
+	.artist {
+		margin: 0.2em 0 0.8em;
+		color: rgb(var(--gray));
+	}
+	dl {
+		display: grid;
+		gap: 0.45em;
+		margin: 1em 0;
+	}
+	dl div {
+		display: grid;
+		grid-template-columns: minmax(7em, 0.35fr) 1fr;
+		gap: 0.75em;
+	}
+	dt {
+		color: rgb(var(--gray));
+	}
+	dd {
+		margin: 0;
+	}
+	.attribution {
+		margin: 2.5em 0 0;
+		color: rgb(var(--gray));
+		font-size: 0.8em;
+	}
+	@media (max-width: 600px) {
+		main {
+			padding: 1.5em 0;
+		}
+		.searcher {
+			padding: 1.25em;
+		}
+		.search-controls {
+			flex-direction: column;
+		}
+		button {
+			width: 100%;
+		}
+	}
+</style>

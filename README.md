@@ -54,6 +54,15 @@ All commands are run from the root of the project, from a terminal:
 | `npm run astro ...`       | Run CLI commands like `astro add`, `astro check` |
 | `npm run astro -- --help` | Get help using the Astro CLI                     |
 
+## API routes
+
+The SSR runtime exposes a small set of JSON endpoints for operational and content use:
+
+- `GET /api/health` — returns service health data.
+- `GET /api/posts` — returns the blog post metadata from the content collection.
+- `GET /api/feedback` — returns stored feedback submissions.
+- `POST /api/feedback` — accepts `name`, `email`, and `message` JSON or form data and stores the submission in memory for the current running instance.
+
 ## Docker
 
 Build and run the production container locally on port 4321:
