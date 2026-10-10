@@ -54,6 +54,20 @@ All commands are run from the root of the project, from a terminal:
 | `npm run astro ...`       | Run CLI commands like `astro add`, `astro check` |
 | `npm run astro -- --help` | Get help using the Astro CLI                     |
 
+## Docker
+
+Build and run the production container locally on port 4321:
+
+```sh
+docker compose up --build
+```
+
+The container health check polls `/api/health`. Check its status with:
+
+```sh
+docker compose ps
+```
+
 ## 👀 Want to learn more?
 
 Check out [our documentation](https://docs.astro.build) or jump into our [Discord server](https://astro.build/chat).
