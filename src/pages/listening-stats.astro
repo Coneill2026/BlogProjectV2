@@ -1,0 +1,310 @@
+---
+import BaseHead from '../components/BaseHead.astro';
+import Footer from '../components/Footer.astro';
+import Header from '../components/Header.astro';
+import { SITE_TITLE } from '../consts';
+---
+
+<!doctype html>
+<html lang="en">
+	<head>
+		<BaseHead
+			title={`Listening Stats | ${SITE_TITLE}`}
+			description="See the Spotify artists and tracks Cian has been listening to."
+		/>
+	</head>
+	<body>
+		<Header />
+		<main>
+			<section class="listening-stats" aria-labelledby="page-title">
+				<p class="eyebrow">Currently on repeat</p>
+				<h1 id="page-title">What I’m listening to</h1>
+				<p class="intro">
+					My most-listened artists and tracks, powered by Spotify. This is Spotify’s
+					shortest available top-items range (approximately the past four weeks).
+				</p>
+				<p id="status" class="message" role="status" aria-live="polite">
+					Loading listening stats…
+				</p>
+				<div id="stats-content" hidden>
+					<section class="results" aria-labelledby="artists-title">
+						<h2 id="artists-title">Top artists</h2>
+						<ol id="artists-list" class="stats-list"></ol>
+					</section>
+					<section class="results" aria-labelledby="tracks-title">
+						<h2 id="tracks-title">Top tracks</h2>
+						<ol id="tracks-list" class="stats-list"></ol>
+					</section>
+					<section class="weekly-summary" aria-labelledby="weekly-summary-title">
+						<h2 id="weekly-summary-title">The past 7 days</h2>
+						<div class="summary-cards">
+							<p><strong id="tracks-played">—</strong><span>tracks played</span></p>
+							<p>
+								<strong id="minutes-listened">—</strong>
+								<span>estimated minutes listened</span>
+							</p>
+						</div>
+						<p class="summary-note">
+							Minutes are estimated from the full duration of each track played, so they
+							may be higher than the time actually listened to.
+						</p>
+					</section>
+					<p id="updated-at" class="updated-at"></p>
+				</div>
+				<p class="attribution">
+					Listening data provided by <a href="https://www.spotify.com/" target="_blank" rel="noreferrer">
+						Spotify
+					</a>.
+				</p>
+			</section>
+		</main>
+		<Footer />
+	</body>
+</html>
+
+<script>
+	interface ListeningItem {
+		name: string;
+		subtitle?: string;
+		imageUrl?: string;
+		url?: string;
+	}
+
+	interface ListeningStats {
+		artists: ListeningItem[];
+		tracks: ListeningItem[];
+		weeklySummary: { tracksPlayed: number; estimatedMinutes: number };
+		fetchedAt: string;
+	}
+
+	const status = document.querySelector<HTMLElement>('#status');
+	const statsContent = document.querySelector<HTMLElement>('#stats-content');
+	const artistsList = document.querySelector<HTMLOListElement>('#artists-list');
+	const tracksList = document.querySelector<HTMLOListElement>('#tracks-list');
+	const tracksPlayed = document.querySelector<HTMLElement>('#tracks-played');
+	const minutesListened = document.querySelector<HTMLElement>('#minutes-listened');
+	const updatedAt = document.querySelector<HTMLElement>('#updated-at');
+
+	function appendItems(list: HTMLOListElement, items: ListeningItem[]) {
+		for (const item of items) {
+			const card = document.createElement('li');
+			card.className = 'stats-card';
+
+			if (item.imageUrl) {
+				const image = document.createElement('img');
+				image.src = item.imageUrl;
+				image.alt = '';
+				image.loading = 'lazy';
+				card.append(image);
+			}
+
+			const details = document.createElement('div');
+			details.className = 'item-details';
+			const title = document.createElement(item.url ? 'a' : 'h3');
+			title.textContent = item.name;
+			if (item.url && title instanceof HTMLAnchorElement) {
+				title.href = item.url;
+				title.target = '_blank';
+				title.rel = 'noreferrer';
+			}
+			details.append(title);
+
+			if (item.subtitle) {
+				const subtitle = document.createElement('p');
+				subtitle.textContent = item.subtitle;
+				details.append(subtitle);
+			}
+			card.append(details);
+			list.append(card);
+		}
+	}
+
+	async function loadStats() {
+		try {
+			const response = await fetch('/api/spotify/listening-stats');
+			if (!response.ok) {
+				const failure = (await response.json()) as { error?: string };
+				throw new Error(
+					failure.error ??
+						(response.status === 503
+							? 'Listening stats are not configured yet.'
+							: 'Listening stats are temporarily unavailable.'),
+				);
+			}
+			const stats = (await response.json()) as ListeningStats;
+			if (artistsList) appendItems(artistsList, stats.artists);
+			if (tracksList) appendItems(tracksList, stats.tracks);
+			if (tracksPlayed) {
+				tracksPlayed.textContent = stats.weeklySummary.tracksPlayed.toLocaleString();
+			}
+			if (minutesListened) {
+				minutesListened.textContent = stats.weeklySummary.estimatedMinutes.toLocaleString();
+			}
+			if (statsContent) statsContent.hidden = false;
+			if (status) status.hidden = true;
+			if (updatedAt) {
+				const date = new Date(stats.fetchedAt);
+				updatedAt.textContent = `Last updated ${date.toLocaleString()}`;
+			}
+		} catch (error) {
+			if (status) {
+				status.textContent =
+					error instanceof Error ? error.message : 'Listening stats are temporarily unavailable.';
+				status.classList.add('error');
+			}
+		}
+	}
+
+	void loadStats();
+</script>
+
+<style>
+	main {
+		width: min(100% - 2em, 900px);
+		margin: 0 auto;
+		padding: 3em 0;
+	}
+	.listening-stats {
+		padding: 2em;
+		border: 1px solid rgb(var(--gray-light));
+		border-radius: 12px;
+		background: #303030;
+	}
+	.eyebrow {
+		margin: 0 0 0.25em;
+		color: var(--accent);
+		font-size: 0.8em;
+		font-weight: 700;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+	}
+	h1 {
+		margin-bottom: 0.25em;
+	}
+	.intro {
+		margin-top: 0;
+		color: rgb(var(--gray));
+	}
+	.message {
+		margin: 1.5em 0 0;
+	}
+	.error {
+		color: #ff9999;
+	}
+	.results {
+		margin-top: 2.5em;
+	}
+	.results h2 {
+		margin-bottom: 0.1em;
+		font-size: 1.6em;
+	}
+	.stats-list {
+		display: grid;
+		grid-template-columns: repeat(5, minmax(0, 1fr));
+		gap: 0.6em;
+		margin: 1.25em 0 0;
+		padding: 0;
+		list-style: none;
+	}
+	:global(.stats-card) {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 0.4em;
+		min-width: 0;
+		text-align: center;
+	}
+	:global(.stats-card img) {
+		flex: 0 0 120px;
+		width: 120px;
+		height: 120px;
+		aspect-ratio: 1;
+		border-radius: 4px;
+		object-fit: cover;
+	}
+	:global(.item-details) {
+		min-width: 0;
+	}
+	:global(.item-details h3),
+	:global(.item-details a) {
+		color: rgb(var(--gray-dark));
+		text-decoration: none;
+		display: block;
+		margin: 0;
+		font-size: 1em;
+		line-height: 1.3;
+		overflow-wrap: anywhere;
+		display: -webkit-box;
+		-webkit-box-orient: vertical;
+		-webkit-line-clamp: 2;
+		overflow: hidden;
+	}
+	:global(.item-details a:hover) {
+		color: var(--accent);
+		text-decoration: none;
+	}
+	.weekly-summary {
+		margin-top: 2.5em;
+	}
+	.weekly-summary h2 {
+		margin-bottom: 0.75em;
+		font-size: 1.6em;
+	}
+	.summary-cards {
+		display: grid;
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		gap: 1em;
+	}
+	.summary-cards p {
+		display: grid;
+		gap: 0.25em;
+		margin: 0;
+		padding: 1em;
+		border: 1px solid rgb(var(--gray-light));
+		border-radius: 8px;
+		background: #242424;
+	}
+	.summary-cards strong {
+		font-size: 1.5em;
+	}
+	.summary-note {
+		margin: 0.75em 0 0;
+		color: rgb(var(--gray));
+		font-size: 0.8em;
+	}
+	:global(.item-details p) {
+		margin: 0.25em 0 0;
+		color: rgb(var(--gray));
+		font-size: 0.85em;
+		overflow-wrap: anywhere;
+		display: -webkit-box;
+		-webkit-box-orient: vertical;
+		-webkit-line-clamp: 2;
+		overflow: hidden;
+	}
+	.updated-at,
+	.attribution {
+		margin: 2em 0 0;
+		color: rgb(var(--gray));
+		font-size: 0.8em;
+	}
+	@media (max-width: 600px) {
+		main {
+			padding: 1.5em 0;
+		}
+		.listening-stats {
+			padding: 1.25em;
+		}
+		.stats-list {
+			grid-template-columns: repeat(3, minmax(0, 1fr));
+		}
+		.summary-cards {
+			grid-template-columns: 1fr;
+		}
+	}
+	@media (max-width: 420px) {
+		.stats-list {
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+		}
+	}
+</style>
