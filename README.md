@@ -73,7 +73,9 @@ To configure it:
 
 1. Create an app in the [Spotify Developer Dashboard](https://developer.spotify.com/dashboard).
 2. Add the exact callback URL as a redirect URI: `http://127.0.0.1:4321/api/spotify/callback`
-   for local setup, or `https://your-domain.example/api/spotify/callback` on the deployed site.
+   for local setup, or `<SiteUrl>/api/spotify/callback` on the deployed site. The
+   deployment `SiteUrl` is a CloudFront HTTPS address; register the complete callback
+   address exactly before starting Spotify authorization.
 3. Set the app credentials in the server environment (never use `PUBLIC_` variables):
 
 ```text
@@ -94,8 +96,9 @@ URL again, approve the added permission on Spotify's consent screen, and replace
 forces Spotify to display consent again so newly requested permissions can be granted.
 
 The site uses the refresh token server-side and caches the public stats for five minutes.
-Keep all three Spotify values in the hosting provider's secure environment settings; do
-not commit them to source control.
+For ECS, store all three Spotify values in AWS Secrets Manager using the secret names and
+deployment steps in [the ECS deployment guide](./cdk/README.md). Do not commit them to
+source control.
 
 The seven-day track count comes from Spotify's recent-play history. Listening minutes
 are estimated from each track's full duration because Spotify does not return the

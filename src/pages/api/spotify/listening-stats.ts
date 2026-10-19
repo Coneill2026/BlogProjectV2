@@ -90,16 +90,13 @@ async function getTopItems<T>(kind: 'artists' | 'tracks', token: string): Promis
 }
 
 async function spotifyError(response: Response, request: string) {
-	let detail = '';
-	try {
-		const body = (await response.json()) as {
-			error?: { message?: string };
-			message?: string;
-		};
-		detail = body.error?.message ?? body.message ?? '';
-	} catch {
-		detail = '';
-	}
+	const body = (await response.json().catch(() => undefined)) as
+		| {
+				error?: { message?: string };
+				message?: string;
+		  }
+		| undefined;
+	const detail = body?.error?.message ?? body?.message ?? '';
 	return new Error(
 		`Spotify ${request} request failed (HTTP ${response.status})${detail ? `: ${detail}` : '.'}`,
 	);

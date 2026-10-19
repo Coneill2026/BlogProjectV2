@@ -1,4 +1,5 @@
 import type { APIRoute } from 'astro';
+import { getPublicOrigin } from '../../../utils/public-origin';
 import { getSpotifyEnvironment } from '../../../utils/spotify-env';
 
 function escapeHtml(value: string) {
@@ -15,8 +16,9 @@ function escapeHtml(value: string) {
 }
 
 export const GET: APIRoute = async ({ request, url }) => {
+	const publicOrigin = getPublicOrigin(request, url);
 	const headers = new Headers({
-		'Set-Cookie': `spotify_oauth_state=; HttpOnly; SameSite=Lax; Path=/api/spotify/callback; Max-Age=0${url.protocol === 'https:' ? '; Secure' : ''}`,
+		'Set-Cookie': `spotify_oauth_state=; HttpOnly; SameSite=Lax; Path=/api/spotify/callback; Max-Age=0${publicOrigin.startsWith('https://') ? '; Secure' : ''}`,
 	});
 	const fail = (message: string, status = 400) =>
 		new Response(message, {
@@ -53,7 +55,7 @@ export const GET: APIRoute = async ({ request, url }) => {
 			body: new URLSearchParams({
 				grant_type: 'authorization_code',
 				code,
-				redirect_uri: new URL('/api/spotify/callback', url.origin).href,
+				redirect_uri: new URL('/api/spotify/callback', publicOrigin).href,
 			}),
 		});
 		if (!response.ok) {
@@ -67,7 +69,7 @@ export const GET: APIRoute = async ({ request, url }) => {
 
 		const token = escapeHtml(result.refresh_token);
 		return new Response(
-			`<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Spotify setup</title><style>body{max-width:45rem;margin:3rem auto;padding:0 1rem;font:1rem/1.6 system-ui;background:#242424;color:#eee}textarea{box-sizing:border-box;width:100%;min-height:7rem;padding:.75rem}</style><h1>Spotify authorization complete</h1><p>Copy this refresh token into your hosting provider’s secure environment variables as <code>SPOTIFY_REFRESH_TOKEN</code>. Do not share it or add it to source control.</p><textarea readonly>${token}</textarea><p>You can close this page after saving the token securely.</p></html>`,
+			`<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Spotify setup</title><style>body{max-width:45rem;margin:3rem auto;padding:0 1rem;font:1rem/1.6 system-ui;background:#242424;color:#eee}textarea{box-sizing:border-box;width:100%;min-height:7rem;padding:.75rem}</style><h1>Spotify authorization complete</h1><p>For ECS, save this refresh token as the value of <code>proper-parallax/spotify/refresh-token</code> in AWS Secrets Manager. For local development, set it as <code>SPOTIFY_REFRESH_TOKEN</code> in your server environment. Do not share it or add it to source control.</p><textarea readonly>${token}</textarea><p>You can close this page after saving the token securely.</p></html>`,
 			{
 				status: 200,
 				headers: {

@@ -4,7 +4,8 @@ import * as origins from 'aws-cdk-lib/aws-cloudfront-origins';
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import * as ecs from 'aws-cdk-lib/aws-ecs';
 import * as ecsPatterns from 'aws-cdk-lib/aws-ecs-patterns';
-import * as path from 'node:path';
+import * as secretsmanager from 'aws-cdk-lib/aws-secretsmanager';
+import * as path from 'path';
 
 export class AstroSsrStack extends cdk.Stack {
   constructor(scope: cdk.App, id: string, props?: cdk.StackProps) {
@@ -21,6 +22,30 @@ export class AstroSsrStack extends cdk.Stack {
         },
       ],
     });
+
+    const spotifySecrets = {
+      SPOTIFY_CLIENT_ID: ecs.Secret.fromSecretsManager(
+        secretsmanager.Secret.fromSecretNameV2(
+          this,
+          'SpotifyClientId',
+          'proper-parallax/spotify/client-id',
+        ),
+      ),
+      SPOTIFY_CLIENT_SECRET: ecs.Secret.fromSecretsManager(
+        secretsmanager.Secret.fromSecretNameV2(
+          this,
+          'SpotifyClientSecret',
+          'proper-parallax/spotify/client-secret',
+        ),
+      ),
+      SPOTIFY_REFRESH_TOKEN: ecs.Secret.fromSecretsManager(
+        secretsmanager.Secret.fromSecretNameV2(
+          this,
+          'SpotifyRefreshToken',
+          'proper-parallax/spotify/refresh-token',
+        ),
+      ),
+    };
 
     const app = new ecsPatterns.ApplicationLoadBalancedFargateService(this, 'WebService', {
       vpc,
@@ -41,6 +66,7 @@ export class AstroSsrStack extends cdk.Stack {
           NODE_ENV: 'production',
           PORT: '4321',
         },
+        secrets: spotifySecrets,
         logDriver: ecs.LogDrivers.awsLogs({ streamPrefix: 'proper-parallax' }),
       },
     });
@@ -54,7 +80,7 @@ export class AstroSsrStack extends cdk.Stack {
         origin: new origins.HttpOrigin(app.loadBalancer.loadBalancerDnsName),
         viewerProtocolPolicy: cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
         cachePolicy: cloudfront.CachePolicy.CACHING_DISABLED,
-        originRequestPolicy: cloudfront.OriginRequestPolicy.ALL_VIEWER_EXCEPT_HOST_HEADER,
+        originRequestPolicy: cloudfront.OriginRequestPolicy.ALL_VIEWER_AND_CLOUDFRONT_2022,
         allowedMethods: cloudfront.AllowedMethods.ALLOW_ALL,
       },
     });
