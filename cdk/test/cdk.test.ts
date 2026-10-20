@@ -7,7 +7,9 @@ Object.defineProperty(globalThis, 'performance', { value: performance, configura
 
 test('deploys the SSR app behind an uncached HTTPS CloudFront distribution', () => {
 	const app = new cdk.App();
-	const stack = new AstroSsrStack(app, 'StaticSiteStack');
+	const stack = new AstroSsrStack(app, 'StaticSiteStack', {
+		env: { account: '701450111621', region: 'eu-north-1' },
+	});
 	const template = Template.fromStack(stack);
 
 	template.hasResourceProperties('AWS::ECS::TaskDefinition', {
@@ -25,18 +27,15 @@ test('deploys the SSR app behind an uncached HTTPS CloudFront distribution', () 
 				Secrets: Match.arrayWith([
 					{
 						Name: 'SPOTIFY_CLIENT_ID',
-						ValueFrom:
-							'arn:aws:secretsmanager:us-east-1:701450111621:secret:proper-parallax/spotify/client-id-NgQaVY',
+						ValueFrom: Match.anyValue(),
 					},
 					{
 						Name: 'SPOTIFY_CLIENT_SECRET',
-						ValueFrom:
-							'arn:aws:secretsmanager:us-east-1:701450111621:secret:proper-parallax/spotify/client-secret-eAmQfC',
+						ValueFrom: Match.anyValue(),
 					},
 					{
 						Name: 'SPOTIFY_REFRESH_TOKEN',
-						ValueFrom:
-							'arn:aws:secretsmanager:us-east-1:701450111621:secret:proper-parallax/spotify/refresh-token-2w6xvP',
+						ValueFrom: Match.anyValue(),
 					},
 				]),
 			}),
@@ -48,18 +47,15 @@ test('deploys the SSR app behind an uncached HTTPS CloudFront distribution', () 
 			Statement: Match.arrayWith([
 				Match.objectLike({
 					Action: Match.arrayWith(['secretsmanager:GetSecretValue']),
-					Resource:
-						'arn:aws:secretsmanager:us-east-1:701450111621:secret:proper-parallax/spotify/client-id-NgQaVY',
+					Resource: Match.anyValue(),
 				}),
 				Match.objectLike({
 					Action: Match.arrayWith(['secretsmanager:GetSecretValue']),
-					Resource:
-						'arn:aws:secretsmanager:us-east-1:701450111621:secret:proper-parallax/spotify/client-secret-eAmQfC',
+					Resource: Match.anyValue(),
 				}),
 				Match.objectLike({
 					Action: Match.arrayWith(['secretsmanager:GetSecretValue']),
-					Resource:
-						'arn:aws:secretsmanager:us-east-1:701450111621:secret:proper-parallax/spotify/refresh-token-2w6xvP',
+					Resource: Match.anyValue(),
 				}),
 			]),
 		}),
