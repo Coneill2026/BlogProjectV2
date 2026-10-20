@@ -25,15 +25,18 @@ test('deploys the SSR app behind an uncached HTTPS CloudFront distribution', () 
 				Secrets: Match.arrayWith([
 					{
 						Name: 'SPOTIFY_CLIENT_ID',
-						ValueFrom: Match.anyValue(),
+						ValueFrom:
+							'arn:aws:secretsmanager:us-east-1:701450111621:secret:proper-parallax/spotify/client-id-NgQaVY',
 					},
 					{
 						Name: 'SPOTIFY_CLIENT_SECRET',
-						ValueFrom: Match.anyValue(),
+						ValueFrom:
+							'arn:aws:secretsmanager:us-east-1:701450111621:secret:proper-parallax/spotify/client-secret-eAmQfC',
 					},
 					{
 						Name: 'SPOTIFY_REFRESH_TOKEN',
-						ValueFrom: Match.anyValue(),
+						ValueFrom:
+							'arn:aws:secretsmanager:us-east-1:701450111621:secret:proper-parallax/spotify/refresh-token-2w6xvP',
 					},
 				]),
 			}),
@@ -45,6 +48,18 @@ test('deploys the SSR app behind an uncached HTTPS CloudFront distribution', () 
 			Statement: Match.arrayWith([
 				Match.objectLike({
 					Action: Match.arrayWith(['secretsmanager:GetSecretValue']),
+					Resource:
+						'arn:aws:secretsmanager:us-east-1:701450111621:secret:proper-parallax/spotify/client-id-NgQaVY',
+				}),
+				Match.objectLike({
+					Action: Match.arrayWith(['secretsmanager:GetSecretValue']),
+					Resource:
+						'arn:aws:secretsmanager:us-east-1:701450111621:secret:proper-parallax/spotify/client-secret-eAmQfC',
+				}),
+				Match.objectLike({
+					Action: Match.arrayWith(['secretsmanager:GetSecretValue']),
+					Resource:
+						'arn:aws:secretsmanager:us-east-1:701450111621:secret:proper-parallax/spotify/refresh-token-2w6xvP',
 				}),
 			]),
 		}),
@@ -52,6 +67,12 @@ test('deploys the SSR app behind an uncached HTTPS CloudFront distribution', () 
 
 	template.hasResourceProperties('AWS::ElasticLoadBalancingV2::TargetGroup', {
 		HealthCheckPath: '/api/health',
+	});
+
+	template.hasResource('AWS::ECS::Service', {
+		DependsOn: Match.arrayWith([
+			Match.stringLikeRegexp('WebServiceTaskDefExecutionRoleDefaultPolicy'),
+		]),
 	});
 
 	template.hasResourceProperties('AWS::CloudFront::Distribution', {

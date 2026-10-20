@@ -19,6 +19,9 @@ Create each as a plaintext secret containing only its corresponding Spotify
 value. Do not put secret values in CDK context, GitHub variables, or source
 control. For the first deployment, the refresh token can be a temporary
 placeholder; the client ID and secret must be valid for Spotify authorization.
+The CDK stack references the complete ARNs of these existing secrets. If you
+delete and recreate one, update its ARN in `lib/cdk-stack.ts` to include the
+new Secrets Manager suffix before deploying.
 
 ## Deploy locally
 

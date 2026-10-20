@@ -23,28 +23,25 @@ export class AstroSsrStack extends cdk.Stack {
       ],
     });
 
+    const spotifyClientIdSecret = secretsmanager.Secret.fromSecretCompleteArn(
+      this,
+      'SpotifyClientId',
+      'arn:aws:secretsmanager:us-east-1:701450111621:secret:proper-parallax/spotify/client-id-NgQaVY',
+    );
+    const spotifyClientSecret = secretsmanager.Secret.fromSecretCompleteArn(
+      this,
+      'SpotifyClientSecret',
+      'arn:aws:secretsmanager:us-east-1:701450111621:secret:proper-parallax/spotify/client-secret-eAmQfC',
+    );
+    const spotifyRefreshToken = secretsmanager.Secret.fromSecretCompleteArn(
+      this,
+      'SpotifyRefreshToken',
+      'arn:aws:secretsmanager:us-east-1:701450111621:secret:proper-parallax/spotify/refresh-token-2w6xvP',
+    );
     const spotifySecrets = {
-      SPOTIFY_CLIENT_ID: ecs.Secret.fromSecretsManager(
-        secretsmanager.Secret.fromSecretNameV2(
-          this,
-          'SpotifyClientId',
-          'proper-parallax/spotify/client-id',
-        ),
-      ),
-      SPOTIFY_CLIENT_SECRET: ecs.Secret.fromSecretsManager(
-        secretsmanager.Secret.fromSecretNameV2(
-          this,
-          'SpotifyClientSecret',
-          'proper-parallax/spotify/client-secret',
-        ),
-      ),
-      SPOTIFY_REFRESH_TOKEN: ecs.Secret.fromSecretsManager(
-        secretsmanager.Secret.fromSecretNameV2(
-          this,
-          'SpotifyRefreshToken',
-          'proper-parallax/spotify/refresh-token',
-        ),
-      ),
+      SPOTIFY_CLIENT_ID: ecs.Secret.fromSecretsManager(spotifyClientIdSecret),
+      SPOTIFY_CLIENT_SECRET: ecs.Secret.fromSecretsManager(spotifyClientSecret),
+      SPOTIFY_REFRESH_TOKEN: ecs.Secret.fromSecretsManager(spotifyRefreshToken),
     };
 
     const app = new ecsPatterns.ApplicationLoadBalancedFargateService(this, 'WebService', {
@@ -70,6 +67,18 @@ export class AstroSsrStack extends cdk.Stack {
         logDriver: ecs.LogDrivers.awsLogs({ streamPrefix: 'proper-parallax' }),
       },
     });
+
+    const executionRole = app.taskDefinition.executionRole;
+    if (!executionRole) {
+      throw new Error('The ECS task definition must have an execution role.');
+    }
+
+    const executionRolePolicy = executionRole.node.tryFindChild('DefaultPolicy')?.node.defaultChild;
+    if (!executionRolePolicy) {
+      throw new Error('The ECS task execution role must have its generated policy.');
+    }
+
+    app.service.node.addDependency(executionRolePolicy);
 
     app.targetGroup.configureHealthCheck({
       path: '/api/health',

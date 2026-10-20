@@ -21,6 +21,11 @@
     "aws-cdk-lib": "^2.270.0",
     "constructs": "^10.5.0"
   },
+  "overrides": {
+    "@istanbuljs/load-nyc-config": {
+      "js-yaml": "^4.3.2"
+    }
+  },
   "allowScripts": {
     "@parcel/watcher@2.6.0": true,
     "@swc/core@1.16.2": true,
