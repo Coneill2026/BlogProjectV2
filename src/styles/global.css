@@ -4,29 +4,75 @@
   License MIT: https://github.com/HermanMartinus/bearblog/blob/master/LICENSE.md
  */
 
+@font-face {
+	font-family: "Technology";
+	src: url("../assets/fonts/Technology.ttf") format("truetype");
+	font-style: normal;
+	font-weight: 400;
+	font-display: swap;
+}
+@font-face {
+	font-family: "Technology";
+	src: url("../assets/fonts/Technology-Bold.ttf") format("truetype");
+	font-style: normal;
+	font-weight: 700;
+	font-display: swap;
+}
+@font-face {
+	font-family: "Technology";
+	src: url("../assets/fonts/Technology-Italic.ttf") format("truetype");
+	font-style: italic;
+	font-weight: 400;
+	font-display: swap;
+}
+@font-face {
+	font-family: "Technology";
+	src: url("../assets/fonts/Technology-BoldItalic.ttf") format("truetype");
+	font-style: italic;
+	font-weight: 700;
+	font-display: swap;
+}
+
 :root {
-	--accent: #c62828;
-	--accent-dark: #a61e22;
-	--black: 245, 245, 245;
-	--gray: 170, 170, 170;
-	--gray-light: 70, 70, 70;
-	--gray-dark: 220, 220, 220;
-	--gray-gradient: rgba(36, 36, 36, 50%), #242424;
+	--crimson: #dc143c;
+	--accent: #c9bfc2;
+	--accent-dark: #8b001e;
+	--black: 245, 28, 63;
+	--gray: 139, 16, 39;
+	--gray-light: 91, 24, 40;
+	--gray-dark: 220, 20, 60;
+	--surface: 13, 3, 6;
+	--surface-raised: 25, 5, 10;
+	--gray-gradient: rgba(7, 2, 4, 0%), #070204;
 	--box-shadow:
-		0 2px 6px rgba(var(--gray), 25%), 0 8px 24px rgba(var(--gray), 33%),
-		0 16px 32px rgba(var(--gray), 33%);
+		0 0 0 1px rgba(220, 20, 60, 22%), 0 8px 24px rgba(0, 0, 0, 70%),
+		0 0 30px rgba(220, 20, 60, 18%);
 }
 body {
-	font-family: "Times New Roman", Times, serif;
+	font-family: "Technology", "Lucida Console", "Courier New", monospace;
 	margin: 0;
 	padding: 0;
 	text-align: left;
-	background: #242424;
+	background:
+		radial-gradient(ellipse at 50% -15%, rgba(220, 20, 60, 18%), transparent 52%),
+		radial-gradient(ellipse at 50% 90%, rgba(130, 0, 26, 10%), transparent 48%),
+		#070204;
 	word-wrap: break-word;
 	overflow-wrap: break-word;
-	color: rgb(var(--gray-dark));
+	color: var(--crimson);
+	text-shadow: 0 0 7px rgba(220, 20, 60, 38%);
 	font-size: 20px;
 	line-height: 1.7;
+}
+button,
+input,
+select,
+textarea {
+	font: inherit;
+}
+::selection {
+	background: var(--accent);
+	color: #100204;
 }
 main {
 	width: 720px;
@@ -43,6 +89,7 @@ h6 {
 	margin: 0 0 0.5rem 0;
 	color: rgb(var(--black));
 	line-height: 1.2;
+	text-shadow: 0 0 11px rgba(220, 20, 60, 52%);
 }
 h1 {
 	font-size: 3.052em;
@@ -70,6 +117,14 @@ a {
 a:hover {
 	color: var(--accent-dark);
 }
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+	outline: 2px solid var(--accent);
+	outline-offset: 3px;
+}
 p {
 	margin-bottom: 1em;
 }
@@ -94,7 +149,8 @@ img {
 }
 code {
 	padding: 2px 5px;
-	background-color: rgb(var(--gray-light));
+	background-color: rgb(var(--surface-raised));
+	color: var(--accent);
 	border-radius: 2px;
 }
 pre {
@@ -109,6 +165,7 @@ blockquote {
 	padding: 0 0 0 20px;
 	margin: 0;
 	font-size: 1.333em;
+	color: rgb(var(--gray));
 }
 hr {
 	border: none;
