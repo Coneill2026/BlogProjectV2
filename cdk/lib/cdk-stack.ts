@@ -23,20 +23,20 @@ export class AstroSsrStack extends cdk.Stack {
       ],
     });
 
-    const spotifyClientIdSecret = secretsmanager.Secret.fromSecretCompleteArn(
+    const spotifyClientIdSecret = secretsmanager.Secret.fromSecretNameV2(
       this,
       'SpotifyClientId',
-      'arn:aws:secretsmanager:us-east-1:701450111621:secret:proper-parallax/spotify/client-id-NgQaVY',
+      'proper-parallax/spotify/client-id',
     );
-    const spotifyClientSecret = secretsmanager.Secret.fromSecretCompleteArn(
+    const spotifyClientSecret = secretsmanager.Secret.fromSecretNameV2(
       this,
       'SpotifyClientSecret',
-      'arn:aws:secretsmanager:us-east-1:701450111621:secret:proper-parallax/spotify/client-secret-eAmQfC',
+      'proper-parallax/spotify/client-secret',
     );
-    const spotifyRefreshToken = secretsmanager.Secret.fromSecretCompleteArn(
+    const spotifyRefreshToken = secretsmanager.Secret.fromSecretNameV2(
       this,
       'SpotifyRefreshToken',
-      'arn:aws:secretsmanager:us-east-1:701450111621:secret:proper-parallax/spotify/refresh-token-2w6xvP',
+      'proper-parallax/spotify/refresh-token',
     );
     const spotifySecrets = {
       SPOTIFY_CLIENT_ID: ecs.Secret.fromSecretsManager(spotifyClientIdSecret),
@@ -56,7 +56,9 @@ export class AstroSsrStack extends cdk.Stack {
       minHealthyPercent: 100,
       circuitBreaker: { rollback: true },
       taskImageOptions: {
-        image: ecs.ContainerImage.fromAsset(path.resolve(__dirname, '../..')),
+        image: ecs.ContainerImage.fromAsset(path.resolve(__dirname, '../..'), {
+          exclude: ['cdk/cdk.out', 'cdk/cdk.out/**'],
+        }),
         containerPort: 4321,
         environment: {
           HOST: '0.0.0.0',
