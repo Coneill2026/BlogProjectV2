@@ -29,7 +29,6 @@ Requirements:
 - Node.js 22 or later
 - Docker running locally
 - AWS CLI credentials for the account and region configured in `bin/cdk.ts`
-- CDK bootstrap completed in that account and region
 
 From the repository root:
 
@@ -38,8 +37,15 @@ npm ci
 npm run build
 cd cdk
 npm ci
+npx cdk bootstrap aws://701450111621/eu-north-1
 npx cdk deploy
 ```
+
+The GitHub Actions deployment workflow bootstraps this environment before
+deploying. Its AWS credentials must be allowed to create or update the CDK
+bootstrap resources in this account and region. Bootstrap is safe to run more
+than once; for local deployment, it only needs to be run once per account and
+region.
 
 CDK builds and publishes the Docker image during deployment. When deployment
 finishes, open the `SiteUrl` CloudFormation output. The previous S3 bucket
