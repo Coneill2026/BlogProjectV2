@@ -19,36 +19,19 @@ Create each as a plaintext secret containing only its corresponding Spotify
 value. Do not put secret values in CDK context, GitHub variables, or source
 control. For the first deployment, the refresh token can be a temporary
 placeholder; the client ID and secret must be valid for Spotify authorization.
-The CDK stack imports these secrets by name, so create them in `eu-north-1`
+Create these secrets in `eu-north-1` before deploying. The stack references
+their complete ARNs so ECS resolves each exact secret.
+If a secret is deleted and recreated, update its ARN in `lib/cdk-stack.ts`
 before deploying.
 
 ## ECS task execution role
 
-The stack uses the account's existing `ecsTaskExecutionRole` so the role and its
-permissions remain available even if a deployment rolls back. Before deploying,
-ensure this role has the `AmazonECSTaskExecutionRolePolicy` managed policy and
-an IAM policy allowing reads of the three Spotify secrets:
-
-```json
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Effect": "Allow",
-      "Action": "secretsmanager:GetSecretValue",
-      "Resource": [
-        "arn:aws:secretsmanager:eu-north-1:701450111621:secret:proper-parallax/spotify/client-id*",
-        "arn:aws:secretsmanager:eu-north-1:701450111621:secret:proper-parallax/spotify/client-secret*",
-        "arn:aws:secretsmanager:eu-north-1:701450111621:secret:proper-parallax/spotify/refresh-token*"
-      ]
-    }
-  ]
-}
-```
-
-The role's trust relationship must allow `ecs-tasks.amazonaws.com` to assume it.
-The GitHub Actions deployment credentials also need permission to pass this role
-to ECS (`iam:PassRole`).
+The CDK stack creates and manages the ECS task execution role. It grants that
+role permission to retrieve the three referenced Spotify secrets from Secrets
+Manager. The GitHub Actions deployment credentials must be allowed to create
+the role and its policies; no pre-existing `ecsTaskExecutionRole` or manually
+attached secret-read policy is required. The ECS service waits for the role's
+permissions policy to be created before starting tasks.
 
 ## Deploy locally
 
