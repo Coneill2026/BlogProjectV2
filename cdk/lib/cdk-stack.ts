@@ -83,7 +83,9 @@ export class AstroSsrStack extends cdk.Stack {
     });
     const distribution = new cloudfront.Distribution(this, 'SiteDistribution', {
       defaultBehavior: {
-        origin: new origins.HttpOrigin(app.loadBalancer.loadBalancerDnsName),
+        origin: new origins.HttpOrigin(app.loadBalancer.loadBalancerDnsName, {
+          protocolPolicy: cloudfront.OriginProtocolPolicy.HTTP_ONLY,
+        }),
         viewerProtocolPolicy: cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
         cachePolicy: cloudfront.CachePolicy.CACHING_DISABLED,
         originRequestPolicy: cloudfront.OriginRequestPolicy.ALL_VIEWER_AND_CLOUDFRONT_2022,

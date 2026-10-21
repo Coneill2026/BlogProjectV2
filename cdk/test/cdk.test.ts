@@ -68,7 +68,9 @@ test('deploys the SSR app behind an uncached HTTPS CloudFront distribution', () 
 		DistributionConfig: {
 			Origins: Match.arrayWith([
 				Match.objectLike({
-					CustomOriginConfig: Match.anyValue(),
+					CustomOriginConfig: Match.objectLike({
+						OriginProtocolPolicy: 'http-only',
+					}),
 				}),
 			]),
 			DefaultCacheBehavior: {
