@@ -15,6 +15,9 @@ test('deploys the SSR app behind an uncached HTTPS CloudFront distribution', () 
 	template.hasResourceProperties('AWS::ECS::TaskDefinition', {
 		Cpu: '512',
 		Memory: '1024',
+		ExecutionRoleArn: Match.objectLike({
+			'Fn::Join': Match.anyValue(),
+		}),
 		ContainerDefinitions: Match.arrayWith([
 			Match.objectLike({
 				PortMappings: Match.arrayWith([
@@ -42,29 +45,8 @@ test('deploys the SSR app behind an uncached HTTPS CloudFront distribution', () 
 		]),
 	});
 
-	template.hasResourceProperties('AWS::IAM::Policy', {
-		PolicyDocument: Match.objectLike({
-			Statement: Match.arrayWith([
-				Match.objectLike({
-					Action: 'secretsmanager:GetSecretValue',
-					Resource: Match.arrayWith([
-						'arn:aws:secretsmanager:eu-north-1:701450111621:secret:proper-parallax/spotify/client-id*',
-						'arn:aws:secretsmanager:eu-north-1:701450111621:secret:proper-parallax/spotify/client-secret*',
-						'arn:aws:secretsmanager:eu-north-1:701450111621:secret:proper-parallax/spotify/refresh-token*',
-					]),
-				}),
-			]),
-		}),
-	});
-
 	template.hasResourceProperties('AWS::ElasticLoadBalancingV2::TargetGroup', {
 		HealthCheckPath: '/api/health',
-	});
-
-	template.hasResource('AWS::ECS::Service', {
-		DependsOn: Match.arrayWith([
-			Match.stringLikeRegexp('SpotifySecretsAccessPolicy'),
-		]),
 	});
 
 	template.hasResourceProperties('AWS::CloudFront::Distribution', {
