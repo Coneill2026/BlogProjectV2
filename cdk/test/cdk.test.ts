@@ -46,16 +46,12 @@ test('deploys the SSR app behind an uncached HTTPS CloudFront distribution', () 
 		PolicyDocument: Match.objectLike({
 			Statement: Match.arrayWith([
 				Match.objectLike({
-					Action: Match.arrayWith(['secretsmanager:GetSecretValue']),
-					Resource: Match.anyValue(),
-				}),
-				Match.objectLike({
-					Action: Match.arrayWith(['secretsmanager:GetSecretValue']),
-					Resource: Match.anyValue(),
-				}),
-				Match.objectLike({
-					Action: Match.arrayWith(['secretsmanager:GetSecretValue']),
-					Resource: Match.anyValue(),
+					Action: 'secretsmanager:GetSecretValue',
+					Resource: Match.arrayWith([
+						'arn:aws:secretsmanager:eu-north-1:701450111621:secret:proper-parallax/spotify/client-id*',
+						'arn:aws:secretsmanager:eu-north-1:701450111621:secret:proper-parallax/spotify/client-secret*',
+						'arn:aws:secretsmanager:eu-north-1:701450111621:secret:proper-parallax/spotify/refresh-token*',
+					]),
 				}),
 			]),
 		}),
@@ -67,7 +63,7 @@ test('deploys the SSR app behind an uncached HTTPS CloudFront distribution', () 
 
 	template.hasResource('AWS::ECS::Service', {
 		DependsOn: Match.arrayWith([
-			Match.stringLikeRegexp('WebServiceTaskDefExecutionRoleDefaultPolicy'),
+			Match.stringLikeRegexp('SpotifySecretsAccessPolicy'),
 		]),
 	});
 
