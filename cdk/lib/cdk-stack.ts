@@ -45,6 +45,12 @@ export class AstroSsrStack extends cdk.Stack {
       SPOTIFY_REFRESH_TOKEN: ecs.Secret.fromSecretsManager(spotifyRefreshToken),
     };
 
+    const executionRole = iam.Role.fromRoleName(
+      this,
+      'ExecutionRole',
+      'ecsTaskExecutionRole',
+    );
+
     const app = new ecsPatterns.ApplicationLoadBalancedFargateService(this, 'WebService', {
       vpc,
       publicLoadBalancer: true,
@@ -68,35 +74,9 @@ export class AstroSsrStack extends cdk.Stack {
         },
         secrets: spotifySecrets,
         logDriver: ecs.LogDrivers.awsLogs({ streamPrefix: 'proper-parallax' }),
+        executionRole,
       },
     });
-
-    const executionRole = app.taskDefinition.executionRole;
-    if (!executionRole) {
-      throw new Error('The ECS task definition must have an execution role.');
-    }
-
-    const executionRolePolicy = executionRole.node.tryFindChild('DefaultPolicy')?.node.defaultChild;
-    if (!executionRolePolicy) {
-      throw new Error('The ECS task execution role must have its generated policy.');
-    }
-
-    const spotifySecretsAccessPolicy = new iam.Policy(this, 'SpotifySecretsAccessPolicy', {
-      roles: [executionRole],
-      statements: [
-        new iam.PolicyStatement({
-          actions: ['secretsmanager:GetSecretValue'],
-          resources: [
-            'arn:aws:secretsmanager:eu-north-1:701450111621:secret:proper-parallax/spotify/client-id*',
-            'arn:aws:secretsmanager:eu-north-1:701450111621:secret:proper-parallax/spotify/client-secret*',
-            'arn:aws:secretsmanager:eu-north-1:701450111621:secret:proper-parallax/spotify/refresh-token*',
-          ],
-        }),
-      ],
-    });
-
-    app.service.node.addDependency(executionRolePolicy);
-    app.service.node.addDependency(spotifySecretsAccessPolicy);
 
     app.targetGroup.configureHealthCheck({
       path: '/api/health',
