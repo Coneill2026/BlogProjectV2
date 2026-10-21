@@ -81,18 +81,22 @@ export class AstroSsrStack extends cdk.Stack {
       throw new Error('The ECS task execution role must have its generated policy.');
     }
 
-    app.service.node.addDependency(executionRolePolicy);
+    const spotifySecretsAccessPolicy = new iam.Policy(this, 'SpotifySecretsAccessPolicy', {
+      roles: [executionRole],
+      statements: [
+        new iam.PolicyStatement({
+          actions: ['secretsmanager:GetSecretValue'],
+          resources: [
+            'arn:aws:secretsmanager:eu-north-1:701450111621:secret:proper-parallax/spotify/client-id*',
+            'arn:aws:secretsmanager:eu-north-1:701450111621:secret:proper-parallax/spotify/client-secret*',
+            'arn:aws:secretsmanager:eu-north-1:701450111621:secret:proper-parallax/spotify/refresh-token*',
+          ],
+        }),
+      ],
+    });
 
-    executionRole.addToPrincipalPolicy(
-      new iam.PolicyStatement({
-        actions: ['secretsmanager:GetSecretValue'],
-        resources: [
-          'arn:aws:secretsmanager:eu-north-1:701450111621:secret:proper-parallax/spotify/client-id*',
-          'arn:aws:secretsmanager:eu-north-1:701450111621:secret:proper-parallax/spotify/client-secret*',
-          'arn:aws:secretsmanager:eu-north-1:701450111621:secret:proper-parallax/spotify/refresh-token*',
-        ],
-      }),
-    );
+    app.service.node.addDependency(executionRolePolicy);
+    app.service.node.addDependency(spotifySecretsAccessPolicy);
 
     app.targetGroup.configureHealthCheck({
       path: '/api/health',
