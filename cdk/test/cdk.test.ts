@@ -16,7 +16,7 @@ test('deploys the SSR app behind an uncached HTTPS CloudFront distribution', () 
 		Cpu: '512',
 		Memory: '1024',
 		ExecutionRoleArn: Match.objectLike({
-			'Fn::Join': Match.anyValue(),
+			'Fn::GetAtt': Match.anyValue(),
 		}),
 		ContainerDefinitions: Match.arrayWith([
 			Match.objectLike({
@@ -42,6 +42,21 @@ test('deploys the SSR app behind an uncached HTTPS CloudFront distribution', () 
 					},
 				]),
 			}),
+		]),
+	});
+
+	const rolePolicy = Object.values(template.findResources('AWS::IAM::Policy'))
+		.find((resource) => resource.Properties.PolicyName.includes('ExecutionRoleDefaultPolicy'));
+	expect(rolePolicy).toBeDefined();
+	const rolePolicyJson = JSON.stringify(rolePolicy);
+	expect(rolePolicyJson).toContain('secretsmanager:GetSecretValue');
+	expect(rolePolicyJson).toContain('client-id-nMBcGL');
+	expect(rolePolicyJson).toContain('client-secret-e1XdD2');
+	expect(rolePolicyJson).toContain('refresh-token-T3nc2p');
+
+	template.hasResource('AWS::ECS::Service', {
+		DependsOn: Match.arrayWith([
+			Match.stringLikeRegexp('ExecutionRoleDefaultPolicy'),
 		]),
 	});
 

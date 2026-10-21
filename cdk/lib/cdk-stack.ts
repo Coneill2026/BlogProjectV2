@@ -1,5 +1,4 @@
 import * as cdk from 'aws-cdk-lib';
-import * as iam from 'aws-cdk-lib/aws-iam';
 import * as cloudfront from 'aws-cdk-lib/aws-cloudfront';
 import * as origins from 'aws-cdk-lib/aws-cloudfront-origins';
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
@@ -24,32 +23,26 @@ export class AstroSsrStack extends cdk.Stack {
       ],
     });
 
-    const spotifyClientIdSecret = secretsmanager.Secret.fromSecretNameV2(
+    const spotifyClientIdSecret = secretsmanager.Secret.fromSecretCompleteArn(
       this,
       'SpotifyClientId',
-      'proper-parallax/spotify/client-id',
+      'arn:aws:secretsmanager:eu-north-1:701450111621:secret:proper-parallax/spotify/client-id-nMBcGL',
     );
-    const spotifyClientSecret = secretsmanager.Secret.fromSecretNameV2(
+    const spotifyClientSecret = secretsmanager.Secret.fromSecretCompleteArn(
       this,
       'SpotifyClientSecret',
-      'proper-parallax/spotify/client-secret',
+      'arn:aws:secretsmanager:eu-north-1:701450111621:secret:proper-parallax/spotify/client-secret-e1XdD2',
     );
-    const spotifyRefreshToken = secretsmanager.Secret.fromSecretNameV2(
+    const spotifyRefreshToken = secretsmanager.Secret.fromSecretCompleteArn(
       this,
       'SpotifyRefreshToken',
-      'proper-parallax/spotify/refresh-token',
+      'arn:aws:secretsmanager:eu-north-1:701450111621:secret:proper-parallax/spotify/refresh-token-T3nc2p',
     );
     const spotifySecrets = {
       SPOTIFY_CLIENT_ID: ecs.Secret.fromSecretsManager(spotifyClientIdSecret),
       SPOTIFY_CLIENT_SECRET: ecs.Secret.fromSecretsManager(spotifyClientSecret),
       SPOTIFY_REFRESH_TOKEN: ecs.Secret.fromSecretsManager(spotifyRefreshToken),
     };
-
-    const executionRole = iam.Role.fromRoleName(
-      this,
-      'ExecutionRole',
-      'ecsTaskExecutionRole',
-    );
 
     const app = new ecsPatterns.ApplicationLoadBalancedFargateService(this, 'WebService', {
       vpc,
@@ -74,9 +67,15 @@ export class AstroSsrStack extends cdk.Stack {
         },
         secrets: spotifySecrets,
         logDriver: ecs.LogDrivers.awsLogs({ streamPrefix: 'proper-parallax' }),
-        executionRole,
       },
     });
+
+    const executionRole = app.taskDefinition.executionRole;
+    const executionRolePolicy = executionRole?.node.tryFindChild('DefaultPolicy');
+    if (!executionRolePolicy) {
+      throw new Error('The ECS task execution role policy was not created.');
+    }
+    app.service.node.addDependency(executionRolePolicy);
 
     app.targetGroup.configureHealthCheck({
       path: '/api/health',
